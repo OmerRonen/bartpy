@@ -364,3 +364,23 @@ class SklearnModel(BaseEstimator, RegressorMixin):
         self._acceptance_trace = combined_chain["acceptance"]
         new_model.data = self._convert_covariates_to_data(X, y)
         return new_model
+
+
+def main():
+    from sklearn import  datasets
+    from sklearn import model_selection
+    # iris = datasets.load_iris()
+    # idx = np.logical_or(iris.target == 0, iris.target == 1)
+    # X, y = iris.data[idx, ...], iris.target[idx]
+    X, y = datasets.load_diabetes(return_X_y=True)
+
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(
+        X, y, test_size=0.3, random_state=1)
+    bart = SklearnModel()
+    bart.fit(X_train, y_train)
+    preds_org = bart.predict(X_test)
+    mse = np.linalg.norm(preds_org - y_test)
+    print(mse)
+
+if __name__ == '__main__':
+    main()
