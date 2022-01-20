@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 from sklearn.base import RegressorMixin, BaseEstimator
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import datasets
+from sklearn import datasets, model_selection
 
 from bartpy.data import Data
 from bartpy.initializers.initializer import Initializer
@@ -105,6 +105,8 @@ def expand_tree(tree):
 def shrink_node(node, reg_param, parent_val, parent_num, cum_sum, scheme, constant):
     """Shrink the tree
     """
+
+    # node.set_value(node.mean_response)
 
     left = node.left_child
     right = node.right_child
@@ -628,24 +630,28 @@ class ShrunkBARTCV(ShrunkBART):
 
 
 def main():
-    iris = datasets.load_iris()
-    idx = np.logical_or(iris.target == 0, iris.target == 1)
-    X, y = iris.data[idx, ...], iris.target[idx]
+    # iris = datasets.load_iris()
+    # idx = np.logical_or(iris.target == 0, iris.target == 1)
+    # X, y = iris.data[idx, ...], iris.target[idx]
+    X, y = datasets.load_diabetes(return_X_y=True)
 
-    bart = BART(n_chains=1, n_samples=1, n_trees=5, classification=True)
-    bart.fit(X, y)
-    preds_org = bart.predict(X)
-    tree = DecisionTreeClassifier()
-    tree.fit(X, y)
-    preds_tree = tree.predict_proba(X)
-    bart_s = ShrunkBART(copy.deepcopy(bart), reg_param=2, scheme="node_based")
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(
+        X, y, test_size=0.3, random_state=1)
+    bart = BART(classification=False)
+    bart.fit(X_train, y_train)
+    preds_org = bart.predict(X_test)
+    mse = np.linalg.norm(preds_org - y_test)
+    # tree = DecisionTreeClassifier()
+    # tree.fit(X, y)
+    # preds_tree = tree.predict_proba(X)
+    bart_s = ShrunkBARTCV(copy.deepcopy(bart), scheme="node_based")
     bart_s.fit(X, y)
 
-    bart_s_c = ShrunkBART(copy.deepcopy(bart), reg_param=2, scheme="constant")
-    bart_s_c.fit(X, y)
-
-    bart_s_l = ShrunkBART(copy.deepcopy(bart), reg_param=2, scheme="leaf_based")
-    bart_s_l.fit(X, y)
+    # bart_s_c = ShrunkBART(copy.deepcopy(bart), reg_param=2, scheme="constant")
+    # bart_s_c.fit(X, y)
+    #
+    # bart_s_l = ShrunkBART(copy.deepcopy(bart), reg_param=2, scheme="leaf_based")
+    # bart_s_l.fit(X, y)
     # bart_s_cv = ShrunkBARTRegressorCV(estimator_=copy.deepcopy(bart))
     # bart_s_cv.fit(X, y)
     e_bart = ExpandedBART(estimator_=copy.deepcopy(bart))
@@ -653,37 +659,38 @@ def main():
 
     preds = bart_s.predict(X)
 
-    preds_c = bart_s_c.predict(X)
-    preds_l = bart_s_l.predict(X)
-    # preds_cv = bart_s_cv.predict(X)
+    # preds_c = bart_s_c.predict(X)
+    # preds_l = bart_s_l.predict(X)
+    # # preds_cv = bart_s_cv.predict(X)
     preds_bart_e = e_bart.predict(X)
     fig, ax = plt.subplots(1)
 
-    # ax.scatter(np.arange(len(y)), preds_org, c="orange", label="bart")
-    # ax.scatter(np.arange(len(y)), preds, c="purple", alpha=0.3, label="shrunk node")
+    ax.scatter(np.arange(len(y)), preds_org, c="orange", label="bart")
+    ax.scatter(np.arange(len(y)), preds, c="purple", alpha=0.3, label="shrunk node")
     # ax.scatter(np.arange(len(y)), preds_c, c="blue", alpha=0.3, label="shrunk constant")
     # ax.scatter(np.arange(len(y)), preds_l, c="red", alpha=0.3, label="shrunk leaf")
-    # ax.scatter(np.arange(len(y)), preds_bart_e, c="green", alpha=0.3, label="average")
-    preds_all = [preds_org, preds_c, preds_l, preds_bart_e, preds]
-    shift = 0.5
-    rng = (np.min([np.min(p) for p in preds_all]) - shift, np.max([np.max(p) for p in preds_all]) + shift)
-    n_bins = 200
-    alpha = 0.8
-    ax.hist(preds_org, color="orange", alpha=alpha, label="bart", bins=n_bins, range=rng)
-    ax.hist(preds, color="purple", alpha=alpha, label="shrunk node", bins=n_bins, range=rng)
-    ax.hist(preds_c, color="blue", alpha=alpha, label="shrunk constant", bins=n_bins, range=rng)
-    ax.hist(preds_l, color="red", alpha=alpha, label="shrunk leaf", bins=n_bins, range=rng)
-    ax.hist(preds_bart_e, color="green", alpha=alpha, label="average", bins=n_bins, range=rng)
+    ax.scatter(np.arange(len(y)), preds_bart_e, c="green", alpha=0.3, label="average")
+    # preds_all = [preds_org, preds_c, preds_l, preds_bart_e, preds]
+    # shift = 0.5
+    # rng = (np.min([np.min(p) for p in preds_all]) - shift, np.max([np.max(p) for p in preds_all]) + shift)
+    # n_bins = 200
+    # alpha = 0.8
+    # ax.hist(preds_org, color="orange", alpha=alpha, label="bart", bins=n_bins, range=rng)
+    # ax.hist(preds, color="purple", alpha=alpha, label="shrunk node", bins=n_bins, range=rng)
+    # ax.hist(preds_c, color="blue", alpha=alpha, label="shrunk constant", bins=n_bins, range=rng)
+    # ax.hist(preds_l, color="red", alpha=alpha, label="shrunk leaf", bins=n_bins, range=rng)
+    # ax.hist(preds_bart_e, color="green", alpha=alpha, label="average", bins=n_bins, range=rng)
+    #
+    # ax.set_xlabel("Predicted Value")
+    # ax.set_ylabel("Count")
 
-    ax.set_xlabel("Predicted Value")
-    ax.set_ylabel("Count")
+    plt.title(np.mean(y))
 
     plt.legend(loc="upper left")
     plt.savefig("bart_shrink.png")
     # plt.show()
     #
     # plt.close()
-    pass
 
 
 if __name__ == '__main__':
