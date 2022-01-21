@@ -464,7 +464,7 @@ class SklearnModel(BaseEstimator, RegressorMixin):
         np.ndarray
             prediction samples with dimensionality n_samples * n_points
         """
-        return self._prediction_samples
+        return self.prediction_samples
 
     def from_extract(self, extract: List[Chain], X: np.ndarray, y: np.ndarray) -> 'SklearnModel':
         """
