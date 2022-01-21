@@ -80,6 +80,8 @@ class Model:
             self._prediction += tree.predict()
 
     def update_z_values(self, y):
+        if not self.classification:
+            return
         z = np.random.normal(loc=self.predict(self.data.X.values))
         one_label = np.maximum(z[y == 1], 0)
         zero_label = np.minimum(z[y == 0], 0)
