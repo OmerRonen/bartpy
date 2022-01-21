@@ -56,6 +56,9 @@ class LeafNode(TreeNode):
     def set_value(self, value: float) -> None:
         self._value = value
 
+    def set_mean_response(self, value: float) -> None:
+        self._mean_response = value
+
     @property
     def current_value(self):
         return self._value
@@ -69,6 +72,10 @@ class LeafNode(TreeNode):
     @property
     def n_obs(self):
         return self.data.X.n_obsv
+
+    @property
+    def mean_response(self):
+        return self._mean_response
 
 
 class DecisionNode(TreeNode):
@@ -97,8 +104,10 @@ class DecisionNode(TreeNode):
     def current_value(self):
         n_l = self.left_child.n_obs
         n_r = self.right_child.n_obs
-        l_sum = self.left_child.current_value * n_l
-        r_sum = self.right_child.current_value * n_r
+        l_val = self.left_child.current_value if type(self.left_child) == DecisionNode else self.left_child.mean_response
+        r_val = self.right_child.current_value if type(self.right_child) == DecisionNode else self.right_child.mean_response
+        l_sum = l_val * n_l
+        r_sum = r_val * n_r
         return (l_sum + r_sum) / self.n_obs
 
 
