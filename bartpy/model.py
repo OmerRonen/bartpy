@@ -38,7 +38,13 @@ class Model:
             self.n_trees = n_trees
             self._trees = self.initialize_trees()
             if self._initializer is not None:
+                if hasattr(self._initializer._tree,"trees_"):
+                    self.n_trees = len(self._initializer._tree.trees_)
+                    self._trees = self.initialize_trees()
+
+                # for tree in self.trees:
                 self._initializer.initialize_trees(self.refreshed_trees())
+                # self._initializer.initialize_trees(trees=self._trees)
         else:
             self.n_trees = len(trees)
             self._trees = trees

@@ -3,7 +3,7 @@ from typing import Generator
 from bartpy.tree import Tree
 
 
-class Initializer(object):
+class Initializer:
     """
     The abstract interface for the tree initializers.
 
@@ -17,9 +17,15 @@ class Initializer(object):
     Default behaviour is to leave trees uninitialized
     """
 
-    def initialize_tree(self, tree: Tree) -> None:
+    def __init__(self):
+        self.n_trees = 1
+
+    def initialize_tree(self, tree: Tree, tree_number: int) -> None:
         pass
 
     def initialize_trees(self, trees: Generator[Tree, None, None]) -> None:
-        for tree in trees:
-            self.initialize_tree(tree)
+        n_trees = 0
+        for tree_number, tree in enumerate(trees):
+            self.initialize_tree(tree, tree_number)
+            n_trees += 1
+        self.n_trees = n_trees

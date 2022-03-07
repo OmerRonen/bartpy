@@ -248,6 +248,9 @@ class SklearnModel(BaseEstimator, RegressorMixin):
         self._model_samples, self._prediction_samples = self.combined_chains["model"], self.combined_chains[
             "in_sample_predictions"]
         self._acceptance_trace = self.combined_chains["acceptance"]
+        self._likelihood = self.combined_chains["likelihood"]
+        self._probs = self.combined_chains["probs"]
+
         self.fitted_ = True
         return self
 
@@ -285,6 +288,8 @@ class SklearnModel(BaseEstimator, RegressorMixin):
                            beta=self.beta,
                            initializer=self.initializer,
                            classification=self.classification)
+        n_trees = self.n_trees if self.initializer is None else self.initializer.n_trees
+        self.n_trees = n_trees
         return self.model
 
     def f_delayed_chains(self, X: np.ndarray, y: np.ndarray):
@@ -452,6 +457,32 @@ class SklearnModel(BaseEstimator, RegressorMixin):
         List[Mapping[str, float]]
         """
         return self._acceptance_trace
+
+    @property
+    def likelihood(self) -> List:
+        """
+        List of Mappings from variable name to likelihood
+
+        Each entry is the acceptance rate of the variable in each iteration of the model
+
+        Returns
+        -------
+        List[Mapping[str, float]]
+        """
+        return self._likelihood
+
+    @property
+    def probs(self) -> List:
+        """
+        List of Mappings from variable name to likelihood
+
+        Each entry is the acceptance rate of the variable in each iteration of the model
+
+        Returns
+        -------
+        List[Mapping[str, float]]
+        """
+        return self._probs
 
     @property
     def prediction_samples(self) -> np.ndarray:
